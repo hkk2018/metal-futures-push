@@ -1,0 +1,28 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: metal-push
+spec:
+  schedule: "0 * * * *"            # 每小時整點；要交易時段再推可改 cron 或在程式判斷
+  timeZone: "Asia/Taipei"         # k8s 1.27+；舊版移除並靠容器 TZ
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 180
+      template:
+        spec:
+          restartPolicy: Never
+          containers:
+            - name: metal-push
+              image: <your-registry>/metal-futures-push:latest
+              # 預設 ENTRYPOINT 已是 python -m app.cli；要篩選就加 args：
+              # args: ["--metals", "黃金,銅,鎳"]
+              envFrom:
+                - secretRef:
+                    name: metal-push-secret
+              resources:
+                requests: { cpu: "50m", memory: "256Mi" }
+                limits:   { cpu: "300m", memory: "512Mi" }

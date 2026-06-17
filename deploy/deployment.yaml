@@ -1,0 +1,39 @@
+# 可選：常駐 HTTP 服務，提供「隨時觸發」端點。
+# 不需要隨時觸發、只要排程的話，這個檔可以不套用。
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: metal-push-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels: { app: metal-push-server }
+  template:
+    metadata:
+      labels: { app: metal-push-server }
+    spec:
+      containers:
+        - name: server
+          image: <your-registry>/metal-futures-push:latest
+          command: ["uvicorn", "app.server:app", "--host", "0.0.0.0", "--port", "8080"]
+          ports:
+            - containerPort: 8080
+          envFrom:
+            - secretRef:
+                name: metal-push-secret
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 5
+          resources:
+            requests: { cpu: "50m", memory: "256Mi" }
+            limits:   { cpu: "300m", memory: "512Mi" }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: metal-push-server
+spec:
+  selector: { app: metal-push-server }
+  ports:
+    - port: 80
+      targetPort: 8080

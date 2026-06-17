@@ -1,0 +1,31 @@
+name: metal-push
+
+on:
+  schedule:
+    - cron: "0 * * * *"        # 每小時（UTC）；GitHub cron 用 UTC
+  workflow_dispatch:          # 手機 GitHub App 也能一鍵「Run workflow」隨時推
+    inputs:
+      metals:
+        description: "逗號分隔，留空=全部（如 黃金,銅,鎳）"
+        required: false
+      markets:
+        description: "逗號分隔，留空=全部（如 大陸,美國,倫敦）"
+        required: false
+
+jobs:
+  push:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -r requirements.txt
+      - name: Push
+        env:
+          WECOM_KEY: ${{ secrets.WECOM_KEY }}
+        run: |
+          ARGS=""
+          [ -n "${{ github.event.inputs.metals }}" ] && ARGS="$ARGS --metals ${{ github.event.inputs.metals }}"
+          [ -n "${{ github.event.inputs.markets }}" ] && ARGS="$ARGS --markets ${{ github.event.inputs.markets }}"
+          python -m app.cli $ARGS
