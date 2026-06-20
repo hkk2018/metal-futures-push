@@ -7,6 +7,7 @@
 框架本身（設定、組訊息、推送、排程）不受影響。
 """
 
+import time
 from dataclasses import dataclass
 
 import requests
@@ -22,6 +23,18 @@ class Quote:
 
 
 # ---------- 大陸：akshare ----------
+def _retry(fn, times=3, delay=2):
+    """大陸資料源從境外(GitHub runner)抓偶爾逾時，簡單重試。"""
+    last = None
+    for _ in range(times):
+        try:
+            return fn()
+        except Exception as e:  # noqa: BLE001
+            last = e
+            time.sleep(delay)
+    raise last
+
+
 def fetch_cn(cn_name: str) -> Quote:
     """
     大陸期貨即時（RMB）。
@@ -31,14 +44,17 @@ def fetch_cn(cn_name: str) -> Quote:
     """
     import akshare as ak
 
-    df = ak.futures_zh_realtime(symbol=cn_name)
-    sort_col = "hold" if "hold" in df.columns else df.columns[-1]
-    row = df.sort_values(sort_col, ascending=False).iloc[0]
-    return Quote(
-        name=str(row.get("symbol", cn_name)),
-        last=float(row.get("trade")),
-        change_pct=float(row.get("changepercent", 0.0)),
-    )
+    def _do():
+        df = ak.futures_zh_realtime(symbol=cn_name)
+        sort_col = "hold" if "hold" in df.columns else df.columns[-1]
+        row = df.sort_values(sort_col, ascending=False).iloc[0]
+        return Quote(
+            name=str(row.get("symbol", cn_name)),
+            last=float(row.get("trade")),
+            change_pct=float(row.get("changepercent", 0.0)),
+        )
+
+    return _retry(_do)
 
 
 # ---------- 美國：yfinance（COMEX） ----------
@@ -80,24 +96,33 @@ def fetch_lme(symbol: str) -> Quote:
     return Quote(name=f"LME-{symbol}", last=last, change_pct=pct)
 
 
-# ---------- 台灣：期交所（目前只有黃金） ----------
-def fetch_taifex(ref: str) -> Quote:
+# ---------- 台灣：台幣金價（國際金價×匯率換算） ----------
+def fetch_twd_gold(ref: str = "") -> Quote:
     """
-    台灣期交所金屬期貨只有黃金（台幣黃金期貨 / 美元黃金期貨）。
-    台期所沒有穩定的免費即時 JSON；可選做法：
-      1. 抓官網每日行情頁面解析（延遲、需自行 parse）
-      2. 直接用國際金價(GC=F)當參考，省事
-    這裡先回傳「未接」狀態，避免假裝有資料。要哪種我再幫你接。
+    台期所金屬期貨只有黃金、且無穩定免費即時源，故台灣黃金改用：
+      國際金價(GC=F, USD/oz) × 美元台幣匯率(TWD=X) ÷ 31.1035 = 台幣/克
+    漲跌幅取國際金價的日變動（匯率日內波動較小，略過）。
+    若要更貼近台銀牌價，可再加價差/手續費調整。
     """
-    return Quote(name="台期所黃金", last=0.0, change_pct=0.0,
-                 ok=False, err="台期所資料源未接（見 fetch_taifex 說明）")
+    import yfinance as yf
+
+    g = yf.Ticker("GC=F").history(period="5d")
+    fx = yf.Ticker("TWD=X").history(period="5d")
+    if g.empty or fx.empty:
+        raise RuntimeError("yfinance 無 GC=F 或 TWD=X 資料")
+    usd_oz = float(g["Close"].iloc[-1])
+    prev_oz = float(g["Close"].iloc[-2]) if len(g) > 1 else usd_oz
+    usdtwd = float(fx["Close"].iloc[-1])
+    twd_per_gram = usd_oz * usdtwd / 31.1035
+    pct = (usd_oz - prev_oz) / prev_oz * 100 if prev_oz else 0.0
+    return Quote(name="台幣/克", last=round(twd_per_gram, 1), change_pct=pct)
 
 
 DISPATCH = {
     "cn": fetch_cn,
     "comex": fetch_comex,
     "lme": fetch_lme,
-    "taifex": fetch_taifex,
+    "twd_gold": fetch_twd_gold,
 }
 
 

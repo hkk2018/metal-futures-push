@@ -2,7 +2,10 @@ name: metal-push
 
 on:
   schedule:
-    - cron: "0 * * * *"        # 每小時（UTC）；GitHub cron 用 UTC
+    # GitHub cron 用 UTC。每小時整點推一次：
+    - cron: "0 * * * *"
+    # 只想台灣白天交易時段(平日09-15 = UTC01-07)可改成：
+    # - cron: "0 1-7 * * 1-5"
   workflow_dispatch:          # 手機 GitHub App 也能一鍵「Run workflow」隨時推
     inputs:
       metals:

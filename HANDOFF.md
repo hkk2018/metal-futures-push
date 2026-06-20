@@ -3,8 +3,8 @@
 最後更新：初版交付。這份給「接手的人」或「Claude Code web」快速進入狀況。
 
 ## 一句話現況
-程式骨架與三種跑法（CLI / k8s / GitHub Actions）都已完成、語法可編譯通過。
-推送管道為企業微信群機器人，`WECOM_KEY` 已可由使用者提供。尚有幾項抓價源與部署決策待定。
+程式骨架完成、語法可編譯通過。**部署方式鎖定 GitHub Actions**（cron + 手動）。
+推送走企業微信群機器人，`WECOM_KEY` 由使用者提供。台灣黃金已接（台幣/克）。剩下多為首次實跑的微調。
 
 ## 已完成 ✅
 - 金屬×市場設定矩陣（`app/config.py`）
@@ -23,17 +23,15 @@
 - 台灣金屬期貨**只有黃金**，其餘市場留空格。
 
 ## 待定 / 待辦 ⏳
-1. **抓價機器位置（GFW）** — 使用者的 k8s 在大陸還是境外尚未確認。
-   - 若在大陸：yfinance(美國盤) 會被牆 → 需把國際盤改由境外/GitHub Actions 抓。
-   - 若在境外：akshare(大陸盤) 偶爾不穩 → 視情況加重試或換源。
-   - 建議落地：大陸盤在境內、國際盤在境外，各推同一 webhook。
-2. **台灣黃金（TAIFEX）** — `fetch_taifex` 尚未接。二選一：
-   - (a) 解析台期所官網每日行情（延遲、需 parse）
-   - (b) 直接用國際金價 GC=F 當參考（省事）
+1. ~~抓價機器位置~~ → **已定：只用 GitHub Actions**（runner 在境外）。
+   國際盤(COMEX/LME/台幣金價)抓得到；大陸盤(akshare)從境外偶爾逾時，已在 `fetch_cn` 加重試。
+2. ~~台灣黃金~~ → **已接**：`fetch_twd_gold` 用 GC=F × TWD=X ÷ 31.1035 = 台幣/克。
+   要更貼台銀牌價再加價差/手續費。
 3. **可選：PushPlus 管道** — 若想讓大陸朋友用「個人微信」收（免裝企業微信），
    在 `app/push.py` 加 `push_pushplus()`，用環境變數切換 `WECOM` / `PUSHPLUS`。
 4. **akshare 品種名/介面驗證** — 首次實跑可能要微調 `config.py` 的中文品種名或 `sources.fetch_cn`。
-5. **排程時間** — GitHub Actions cron 為 UTC；如只想交易時段推，改 cron 或在程式判斷時段。
+5. **排程時段** — GitHub cron 為 UTC；只想台灣交易時段推改 `push.yml` cron（已附 `0 1-7 * * 1-5` 範例）。
+6. **k8s** — `deploy/` 保留但非必要；純 GitHub Actions 可忽略。
 
 ## 如何驗證能跑
 ```bash

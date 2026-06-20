@@ -27,7 +27,8 @@ deploy/          k8s：cronjob(排程) / deployment(HTTP服務) / secret 範本
   akshare 介面/品種名偶爾改版，壞了先 `pip install -U akshare` 再對照官方文件。
 - **美國 COMEX**：yfinance ticker（GC=F 金 / SI=F 銀 / HG=F 銅），穩定。
 - **倫敦 LME（鎳）**：新浪外盤 `hq.sinajs.cn/list=hf_NID`，需帶 Referer；欄位順序偶爾調整。
-- **台灣 TAIFEX**：目前**未接**（`fetch_taifex` 回傳未接狀態，不假裝有資料）。台期所金屬只有黃金。
+- **台灣**：台期所金屬只有黃金、且無穩定免費即時源，故 `fetch_twd_gold` 改用
+  國際金價(GC=F) × 匯率(TWD=X) ÷ 31.1035 = 台幣/克。
 - 每一格抓價獨立 try/except，單格失敗不拖垮整批。
 
 ## 重要約束：抓價的機器要連得到資料源
@@ -35,10 +36,11 @@ deploy/          k8s：cronjob(排程) / deployment(HTTP服務) / secret 範本
 - yfinance(美國盤) 走 Yahoo → **大陸境內被牆**，需境外/台灣或 GitHub runner。
 - 建議分工：**大陸盤跑在大陸境內（如自有 k8s），國際盤跑在境外/GitHub Actions**，各推同一個 webhook。
 
-## 怎麼跑（擇一）
-- 本機/隨時：`export WECOM_KEY=...; python -m app.cli`
-- k8s 排程：`deploy/cronjob.yaml`（每小時）；手動補一次 `kubectl create job --from=cronjob/metal-push manual-$(date +%s)`
-- GitHub Actions：設 secret `WECOM_KEY`；自動每小時 + Actions 頁「Run workflow」手動（手機也能按）
+## 怎麼跑（主要：GitHub Actions）
+- **GitHub Actions（主要）**：設 secret `WECOM_KEY`；自動每小時 + Actions 頁「Run workflow」手動（手機也能按）。
+  cron 為 UTC。runner 在境外：國際盤抓得到、大陸盤(akshare)偶爾逾時(已加重試)。
+- 本機除錯：`export WECOM_KEY=...; python -m app.cli [--dry]`
+- k8s（可選，有自己叢集才用）：`deploy/cronjob.yaml`，非必要。
 
 ## 慣例
 - 金鑰一律走環境變數 / k8s Secret / GitHub Secrets，**不准寫進程式或提交到 repo**。
