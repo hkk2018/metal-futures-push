@@ -35,8 +35,7 @@ INSTRUMENTS = [
     # ---- 黃金 ----
     Instrument("黃金", "滬金(大陸)",   "cn",     "黄金"),
     Instrument("黃金", "COMEX(美國)", "comex",  "GC=F"),
-    # 台期所無穩定免費即時源；台灣黃金改用「國際金價×匯率」換算台幣/克
-    Instrument("黃金", "台幣金價(台灣)", "twd_gold", ""),
+    # 台灣：台期所無官方免費即時源，且僅有黃金一項；為求數據可靠，台灣一律不提供（見 docs/SOURCES.md）
     # ---- 白銀 ----
     Instrument("白銀", "滬銀(大陸)",   "cn",     "白银"),
     Instrument("白銀", "COMEX(美國)", "comex",  "SI=F"),

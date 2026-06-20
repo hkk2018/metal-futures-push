@@ -7,10 +7,13 @@
 框架本身（設定、組訊息、推送、排程）不受影響。
 """
 
+import logging
 import time
 from dataclasses import dataclass
 
 import requests
+
+log = logging.getLogger("sources")
 
 
 @dataclass
@@ -96,42 +99,25 @@ def fetch_lme(symbol: str) -> Quote:
     return Quote(name=f"LME-{symbol}", last=last, change_pct=pct)
 
 
-# ---------- 台灣：台幣金價（國際金價×匯率換算） ----------
-def fetch_twd_gold(ref: str = "") -> Quote:
-    """
-    台期所金屬期貨只有黃金、且無穩定免費即時源，故台灣黃金改用：
-      國際金價(GC=F, USD/oz) × 美元台幣匯率(TWD=X) ÷ 31.1035 = 台幣/克
-    漲跌幅取國際金價的日變動（匯率日內波動較小，略過）。
-    若要更貼近台銀牌價，可再加價差/手續費調整。
-    """
-    import yfinance as yf
-
-    g = yf.Ticker("GC=F").history(period="5d")
-    fx = yf.Ticker("TWD=X").history(period="5d")
-    if g.empty or fx.empty:
-        raise RuntimeError("yfinance 無 GC=F 或 TWD=X 資料")
-    usd_oz = float(g["Close"].iloc[-1])
-    prev_oz = float(g["Close"].iloc[-2]) if len(g) > 1 else usd_oz
-    usdtwd = float(fx["Close"].iloc[-1])
-    twd_per_gram = usd_oz * usdtwd / 31.1035
-    pct = (usd_oz - prev_oz) / prev_oz * 100 if prev_oz else 0.0
-    return Quote(name="台幣/克", last=round(twd_per_gram, 1), change_pct=pct)
-
+# 註：台灣不提供。台期所無官方免費即時源、且僅有黃金；為確保數據可靠不做替代估算。
+# 各來源的採用理由與已知失敗情形見 docs/SOURCES.md。
 
 DISPATCH = {
     "cn": fetch_cn,
     "comex": fetch_comex,
     "lme": fetch_lme,
-    "twd_gold": fetch_twd_gold,
 }
 
 
 def fetch(source: str, ref: str) -> Quote:
     fn = DISPATCH.get(source)
     if not fn:
+        log.warning("跳過：未知資料源 source=%s ref=%s", source, ref)
         return Quote(name=ref, last=0.0, change_pct=0.0, ok=False,
                      err=f"未知資料源 {source}")
     try:
         return fn(ref)
     except Exception as e:  # 單一格失敗不拖垮整批
+        # 執行時留痕：哪個來源、哪個標的、為什麼抓不到（GitHub Actions log 可見）
+        log.warning("抓取失敗 source=%s ref=%s 原因=%s", source, ref, e)
         return Quote(name=ref, last=0.0, change_pct=0.0, ok=False, err=str(e))

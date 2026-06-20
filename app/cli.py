@@ -10,15 +10,19 @@
 """
 
 import argparse
+import logging
 
 from .message import build_message
 from .push import push_wecom
 
 
 def main() -> None:
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s"
+    )
     p = argparse.ArgumentParser()
     p.add_argument("--metals", help="逗號分隔，如 黃金,銅,鎳")
-    p.add_argument("--markets", help="逗號分隔，如 大陸,美國,倫敦,台灣")
+    p.add_argument("--markets", help="逗號分隔，如 大陸,美國,倫敦")
     p.add_argument("--dry", action="store_true", help="只印不推")
     args = p.parse_args()
 

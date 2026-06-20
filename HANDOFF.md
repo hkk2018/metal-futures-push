@@ -25,8 +25,7 @@
 ## 待定 / 待辦 ⏳
 1. ~~抓價機器位置~~ → **已定：只用 GitHub Actions**（runner 在境外）。
    國際盤(COMEX/LME/台幣金價)抓得到；大陸盤(akshare)從境外偶爾逾時，已在 `fetch_cn` 加重試。
-2. ~~台灣黃金~~ → **已接**：`fetch_twd_gold` 用 GC=F × TWD=X ÷ 31.1035 = 台幣/克。
-   要更貼台銀牌價再加價差/手續費。
+2. ~~台灣黃金~~ → **已定：不提供台灣**。台期所無官方免費即時源、僅有黃金；不做估算替代（見 `docs/SOURCES.md`）。
 3. **可選：PushPlus 管道** — 若想讓大陸朋友用「個人微信」收（免裝企業微信），
    在 `app/push.py` 加 `push_pushplus()`，用環境變數切換 `WECOM` / `PUSHPLUS`。
 4. **akshare 品種名/介面驗證** — 首次實跑可能要微調 `config.py` 的中文品種名或 `sources.fetch_cn`。

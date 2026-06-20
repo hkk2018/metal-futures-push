@@ -27,8 +27,8 @@ deploy/          k8s：cronjob(排程) / deployment(HTTP服務) / secret 範本
   akshare 介面/品種名偶爾改版，壞了先 `pip install -U akshare` 再對照官方文件。
 - **美國 COMEX**：yfinance ticker（GC=F 金 / SI=F 銀 / HG=F 銅），穩定。
 - **倫敦 LME（鎳）**：新浪外盤 `hq.sinajs.cn/list=hf_NID`，需帶 Referer；欄位順序偶爾調整。
-- **台灣**：台期所金屬只有黃金、且無穩定免費即時源，故 `fetch_twd_gold` 改用
-  國際金價(GC=F) × 匯率(TWD=X) ÷ 31.1035 = 台幣/克。
+- **台灣**：**不提供**。台期所無官方免費即時源、且金屬僅有黃金；為確保只用可靠官方數據，不做替代估算。
+- 每個來源「為何採用/不採用、什麼狀況抓不到」見 `docs/SOURCES.md`（單一真相來源，新增來源要同步更新）。
 - 每一格抓價獨立 try/except，單格失敗不拖垮整批。
 
 ## 重要約束：抓價的機器要連得到資料源
