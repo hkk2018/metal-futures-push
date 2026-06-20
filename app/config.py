@@ -7,13 +7,12 @@ source 種類：
   "cn"     -> 大陸期貨（akshare，RMB）
   "comex"  -> 美國 COMEX（yfinance，USD）
   "lme"    -> 倫敦 LME（新浪外盤，USD）  # 鎳的國際盤在這
-  "taifex" -> 台灣期交所（目前只有黃金）
+  # 台灣不提供：台期所無官方免費即時源、且僅有黃金（見 docs/SOURCES.md）
 
 ref 欄位依 source 不同：
   cn     -> akshare 的中文品種名（如 "黄金"、"沪铜"）
   comex  -> yfinance ticker（如 "GC=F"）
   lme    -> 新浪外盤代號（如 "NID"）
-  taifex -> 自訂代號（見 sources.fetch_taifex 說明）
 """
 
 from dataclasses import dataclass
