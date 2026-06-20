@@ -49,7 +49,14 @@ def fetch_cn(cn_name: str) -> Quote:
 
     def _do():
         df = ak.futures_zh_realtime(symbol=cn_name)
-        sort_col = "hold" if "hold" in df.columns else df.columns[-1]
+        # 取持倉量最大的主力合約。akshare 持倉量欄位現為 "position"
+        #（舊版叫 "hold"）；都沒有才退回最後一欄保底。
+        for col in ("position", "hold"):
+            if col in df.columns:
+                sort_col = col
+                break
+        else:
+            sort_col = df.columns[-1]
         row = df.sort_values(sort_col, ascending=False).iloc[0]
         return Quote(
             name=str(row.get("symbol", cn_name)),

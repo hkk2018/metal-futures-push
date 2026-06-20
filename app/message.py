@@ -14,6 +14,13 @@ def _arrow(pct: float) -> str:
     return "🔺" if pct > 0 else ("🔻" if pct < 0 else "➖")
 
 
+def _fmt_price(v: float) -> str:
+    """價格顯示：千分位 + 最多 2 位小數，去掉無意義的尾零。
+    避免 yfinance 回傳 4172.89990234375 這種未格式化的浮點。"""
+    s = f"{v:,.2f}".rstrip("0").rstrip(".")
+    return s
+
+
 def build_message(metals=None, markets=None) -> str:
     inss = selected(metals=metals, markets=markets)
 
@@ -31,7 +38,7 @@ def build_message(metals=None, markets=None) -> str:
         for ins, q in group:
             if q.ok:
                 lines.append(
-                    f"> {ins.market}：`{q.last}` {_arrow(q.change_pct)}{q.change_pct:+.2f}%"
+                    f"> {ins.market}：`{_fmt_price(q.last)}` {_arrow(q.change_pct)}{q.change_pct:+.2f}%"
                 )
             else:
                 lines.append(f"> {ins.market}：— （{q.err}）")

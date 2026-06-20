@@ -10,7 +10,7 @@ source 種類：
   # 台灣不提供：台期所無官方免費即時源、且僅有黃金（見 docs/SOURCES.md）
 
 ref 欄位依 source 不同：
-  cn     -> akshare 的中文品種名（如 "黄金"、"沪铜"）
+  cn     -> akshare 的中文品種名（如 "黄金"、"沪铜"、"沪镍"）
   comex  -> yfinance ticker（如 "GC=F"）
   lme    -> 新浪外盤代號（如 "NID"）
 """
@@ -44,7 +44,7 @@ INSTRUMENTS = [
     Instrument("銅",   "COMEX(美國)", "comex",  "HG=F"),
     # 台灣無銅期貨
     # ---- 鎳 ----
-    Instrument("鎳",   "滬鎳(大陸)",   "cn",     "镍"),
+    Instrument("鎳",   "滬鎳(大陸)",   "cn",     "沪镍"),
     Instrument("鎳",   "LME(倫敦)",   "lme",    "NID"),   # 鎳國際盤在倫敦，不在美國
     # ---- 鐵 ----
     Instrument("鐵",   "螺紋鋼(大陸)", "cn",     "螺纹钢"),
