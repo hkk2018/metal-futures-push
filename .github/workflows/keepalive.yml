@@ -1,0 +1,25 @@
+name: keepalive
+
+# GitHub 規則：repo 超過 60 天沒有任何 commit/push activity，
+# 會自動把 scheduled workflow 停用(state: disabled_inactivity)，
+# 即使該 workflow 本身排程一直有在跑也一樣會被停。
+# 這支 workflow 每月固定推一個空 commit，讓 repo 保持有 activity，
+# 避免 metal-push 的排程被 GitHub 靜默停用。
+on:
+  schedule:
+    - cron: "0 0 1 * *"  # 每月 1 號 00:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git commit --allow-empty -m "chore: keepalive ping (防 60 天無 activity 停用 metal-push 排程)"
+          git push
